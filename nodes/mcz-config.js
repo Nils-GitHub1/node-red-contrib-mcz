@@ -84,7 +84,11 @@ module.exports = function(RED) {
                 });
 
                 if (node.interval > 0) {
+                    // Maestro app behaviour:
+                    // first retrieve configuration parameters
                     node.requestParameters();
+
+                    // then retrieve live information
                     node.requestInfo();
                     if (node.pollTimer) clearInterval(node.pollTimer);
                     node.pollTimer = setInterval(() => node.requestInfo(), node.interval * 1000);
@@ -159,6 +163,7 @@ module.exports = function(RED) {
                     tipoChiamata: 0,
                     richiesta: 'RecuperoParametri'
                 });
+                node.log(`[mcz-config] Requested parameters (SN=${node.serialNumber})`);
             }
         };
         
