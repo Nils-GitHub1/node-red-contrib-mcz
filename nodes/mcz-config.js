@@ -155,6 +155,7 @@ module.exports = function(RED) {
             }
         };
 
+        // Request stove parameters like the Android app
         node.requestParameters = function() {
             if (node.socket && node.socket.connected) {
                 node.socket.emit('chiedo', {
