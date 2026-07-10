@@ -24,6 +24,8 @@ module.exports = function(RED) {
         node.socket = null;
         node.pollTimer = null;
         node.connected = false;
+        node.lastSeen = null;
+        node.lastReply = null;
 
         let parser = null;
         try {
@@ -72,6 +74,7 @@ module.exports = function(RED) {
 
             node.socket.on('connect', () => {
                 node.connected = true;
+                node.lastSeen = new Date();
                 node.log(`[mcz-config] Connected (SN=${node.serialNumber})`);
 
                 node.socket.emit('join', {
@@ -81,6 +84,7 @@ module.exports = function(RED) {
                 });
 
                 if (node.interval > 0) {
+                    node.requestParameters();
                     node.requestInfo();
                     if (node.pollTimer) clearInterval(node.pollTimer);
                     node.pollTimer = setInterval(() => node.requestInfo(), node.interval * 1000);
@@ -112,6 +116,7 @@ module.exports = function(RED) {
             });
 
             node.socket.on('rispondo', (response) => {
+                node.lastReply = new Date();
                 const trama = (response && response.stringaRicevuta) || '';
                 if (!trama) return;
 
@@ -146,7 +151,29 @@ module.exports = function(RED) {
             }
         };
 
+        node.requestParameters = function() {
+            if (node.socket && node.socket.connected) {
+                node.socket.emit('chiedo', {
+                    serialNumber: node.serialNumber,
+                    macAddress: node.macAddress,
+                    tipoChiamata: 0,
+                    richiesta: 'RecuperoParametri'
+                });
+            }
+        };
+        
         node.writeCommand = function(command) {
+            if (node.socket && node.socket.connected && command) {
+                node.socket.emit('chiedo', {
+                    serialNumber: node.serialNumber,
+                    macAddress: node.macAddress,
+                    tipoChiamata: 1,
+                    richiesta: command
+                });
+            }
+        };
+
+        node.sendRaw = function(command) {
             if (node.socket && node.socket.connected && command) {
                 node.socket.emit('chiedo', {
                     serialNumber: node.serialNumber,
