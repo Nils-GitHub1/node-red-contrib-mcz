@@ -45,7 +45,7 @@ module.exports = function(RED) {
             let commandStr = null;
 
             // Scenario 1: Fully raw SocketIO string bypass (e.g. "C|WriteParametri|...")
-            if ((!config.command || config.command === '') && typeof msg.payload === 'string' && msg.payload.includes('|')) {
+            if ((!config.command || config.command === '') &&  typeof msg.payload === 'string' && (msg.payload.includes('|') || msg.payload.startsWith('Recupero'))) {
                 commandStr = msg.payload;
             } 
             // Scenario 2: Structured command builder
@@ -63,11 +63,33 @@ module.exports = function(RED) {
 
             // Invia il comando di scrittura
             try {
-                cfg.writeCommand(commandStr);
-                node.status({ fill: 'green', shape: 'dot', text: `Sent: ${commandStr.substring(0, 15)}...` });
-                node.send({ topic: `mcz/${cfg.serialNumber}/command`, payload: { command: cmdName, value: cmdValue, raw: commandStr } });
+                if (typeof cfg.sendRaw === 'function') {
+                    cfg.sendRaw(commandStr);
+                } else {
+                    cfg.writeCommand(commandStr);
+                }
+
+                node.status({
+                    fill: 'green',
+                    shape: 'dot',
+                    text: `Sent: ${commandStr.substring(0, 20)}...`
+                });
+
+                node.send({
+                    topic: `mcz/${cfg.serialNumber}/command`,
+                    payload: {
+                        command: cmdName,
+                        value: cmdValue,
+                        raw: commandStr
+                    }
+                });
+
                 setTimeout(() => {
-                    node.status({ fill: 'blue', shape: 'dot', text: 'Ready' });
+                    node.status({
+                        fill: 'blue',
+                        shape: 'dot',
+                        text: 'Ready'
+                    });
                 }, 2000);
             } catch (err) {
                 node.status({ fill: 'red', shape: 'ring', text: RED._('mcz-out.status.sendError') });
