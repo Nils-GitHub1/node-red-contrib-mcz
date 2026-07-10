@@ -63,6 +63,12 @@ module.exports = function(RED) {
 
             // Invia il comando di scrittura
             try {
+                // Connection check to avoid a disconnected socket to silently drops commands.
+                if (!cfg.connected) {
+                    node.error('mcz-out: Stove is not connected');
+                    return;
+                }
+                
                 if (typeof cfg.sendRaw === 'function') {
                     cfg.sendRaw(commandStr);
                 } else {
