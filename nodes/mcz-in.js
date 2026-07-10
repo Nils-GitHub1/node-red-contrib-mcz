@@ -84,6 +84,7 @@ module.exports = function(RED) {
                     node.send([msg, null]);
                     break;
                 case 'parameters':
+                case 'param':
                     setStatus('blue', 'dot', 'Parameters received');
                     node.send([null, { topic:`mcz/${evt.serialNumber}/event`, payload:evt }]);
                     break;
